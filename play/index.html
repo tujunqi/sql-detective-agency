@@ -1,0 +1,1222 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>指标探案馆 · 数字侦探局</title>
+<style>
+  * { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+  :root { --bg:#070c1a; --bg2:#0b1226; --panel:rgba(19,29,56,.9); --panel2:rgba(26,38,72,.9);
+    --bd:rgba(96,126,192,.3); --bd2:rgba(120,150,215,.5); --tx:#eaeffb; --mut:#94a3c7;
+    --gold:#e9b84a; --gold2:#f6d78a; --green:#45d68c; --red:#f26d6d; --blue:#6cb6ff; --purple:#b18cff; --code:#0a1024; }
+  html,body { background:var(--bg); color:var(--tx); font-family:-apple-system,"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif; height:100%; overflow:hidden; }
+  body { background:radial-gradient(900px 420px at 50% -100px, rgba(50,80,160,.20), transparent 60%), radial-gradient(700px 320px at 90% 110%, rgba(110,70,180,.12), transparent 55%); }
+  button { font-family:inherit; cursor:pointer; }
+  @media (prefers-reduced-motion: reduce) { * { animation:none !important; transition:none !important; } }
+  @keyframes breathe { 0%,100%{ box-shadow:0 0 0 0 rgba(233,184,74,.5);} 50%{ box-shadow:0 0 0 7px transparent;} }
+  @keyframes shake { 0%,100%{transform:translateX(0)} 25%{transform:translateX(-6px)} 75%{transform:translateX(6px)} }
+  @keyframes pop { from{ transform:scale(.86); opacity:0; } to{ transform:scale(1); opacity:1; } }
+  @keyframes rise { from{ transform:translateY(10px); opacity:0; } to{ transform:translateY(0); opacity:1; } }
+  @keyframes spin { to{ transform:rotate(360deg); } }
+  @keyframes sheen { from{ background-position:200% 50%; } to{ background-position:-60% 50%; } }
+  @keyframes bob { 0%,100%{ transform:translateY(0);} 50%{ transform:translateY(-2px);} }
+
+  #app { max-width:860px; margin:0 auto; height:100dvh; display:flex; flex-direction:column; padding:10px 12px 8px; }
+  .glass { background:linear-gradient(180deg, rgba(24,35,66,.92), rgba(13,20,40,.95)); border:1px solid var(--bd); border-radius:14px; }
+  .btn-main { width:100%; font-size:15px; letter-spacing:4px; padding:13px 0; border-radius:13px; border:1px solid var(--gold);
+    background:linear-gradient(180deg,#f4cf78,#dcab33); color:#221804; font-weight:500; box-shadow:0 8px 24px rgba(233,184,74,.28); }
+  .btn-main:active { transform:scale(.98); }
+  .btn-main.done { background:linear-gradient(180deg,#59dc9c,#2ea86b); border-color:#59dc9c; color:#04241a; }
+  .btn-mini { font-size:12px; padding:7px 15px; border-radius:9px; border:1px solid var(--bd2); background:rgba(20,30,58,.8); color:var(--mut); }
+  .btn-mini:hover { border-color:var(--gold); color:var(--gold2); }
+  .btn-mini.gold { border-color:var(--gold); color:var(--gold2); }
+  .link { color:var(--blue); text-decoration:none; }
+
+  /* ============ 主页 ============ */
+  #scr-home { flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; text-align:center; overflow:auto; }
+  .emblem { position:relative; width:80px; height:80px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:36px; margin-bottom:14px;
+    background:radial-gradient(circle at 32% 26%, #2c3f70, #101a36 70%); border:1.5px solid var(--gold); box-shadow:0 0 26px rgba(233,184,74,.3), inset 0 0 14px rgba(0,0,0,.5); }
+  .emblem::before { content:""; position:absolute; inset:-8px; border-radius:50%; border:1.5px dashed rgba(233,184,74,.5); animation:spin 26s linear infinite; }
+  .title { font-family:Georgia,"Noto Serif SC","Songti SC",SimSun,serif; font-size:28px; letter-spacing:5px; font-weight:500; line-height:1.45;
+    background:linear-gradient(100deg,#8a6a1f,#f6d78a 30%,#e9b84a 52%,#f9e6b8 74%,#8a6a1f); background-size:220% 100%;
+    -webkit-background-clip:text; background-clip:text; color:transparent; animation:sheen 7s linear infinite; }
+  .subtitle { margin:8px 0 0; font-size:12px; color:var(--mut); letter-spacing:2px; line-height:1.9; }
+  .rankbar { display:flex; align-items:center; gap:10px; font-size:12px; color:var(--mut); padding:8px 16px; border-radius:999px; border:1px solid var(--bd); background:rgba(16,24,48,.7); margin-top:16px; flex-wrap:wrap; justify-content:center; }
+  .xp { width:100px; height:6px; border-radius:99px; background:#1b2749; overflow:hidden; }
+  .xp i { display:block; height:100%; background:linear-gradient(90deg,#c9952b,var(--gold2)); transition:width .9s ease; }
+  .home-foot { margin-top:14px; font-size:10.5px; color:var(--mut); opacity:.7; max-width:430px; line-height:1.9; }
+  .mech { display:flex; flex-wrap:wrap; gap:6px; justify-content:center; margin-top:14px; }
+  .mech span { font-size:10.5px; padding:3px 10px; border-radius:999px; border:1px solid var(--bd2); color:var(--mut); background:rgba(16,24,48,.6); }
+
+  /* ============ HUD ============ */
+  .hud { display:flex; align-items:center; gap:10px; flex-wrap:wrap; padding:8px 12px; font-size:11.5px; color:var(--mut);
+    border:1px solid var(--bd); border-radius:12px; background:linear-gradient(180deg, rgba(14,22,44,.95), rgba(10,16,34,.95)); margin-bottom:8px; }
+  .hud b { color:var(--tx); font-weight:500; }
+  .hud .case-tag { font-family:Georgia,"Songti SC",serif; letter-spacing:1px; color:var(--gold2); font-size:12px; }
+  .hud .sp { flex:1; }
+  .hud .medal b { color:var(--gold); }
+  .clock { font-family:Consolas,monospace; font-size:14px; color:var(--gold2); font-weight:500; }
+  .clock.low { color:var(--red); animation:breathe .8s infinite; }
+  .evi-hud { display:flex; gap:4px; }
+  .evi-hud i { width:22px; height:22px; border-radius:6px; border:1px dashed var(--bd2); display:flex; align-items:center; justify-content:center; font-size:12px; font-style:normal; }
+  .evi-hud i.got { border-style:solid; border-color:var(--green); background:rgba(69,214,140,.14); }
+
+  /* ============ 场景网格 ============ */
+  #scr-scene { flex:1; display:flex; flex-direction:column; min-height:0; }
+  .scene-wrap { flex:1; display:flex; align-items:center; justify-content:center; min-height:0; }
+  #grid { position:relative; display:grid; gap:3px; padding:9px; border-radius:14px; border:1px solid var(--bd); background:rgba(9,14,30,.85);
+    box-shadow:inset 0 0 46px rgba(0,0,0,.5), 0 14px 36px rgba(0,0,0,.4); }
+  #grid::after { content:""; position:absolute; inset:0; pointer-events:none; border-radius:14px;
+    box-shadow:inset 0 0 70px rgba(0,0,0,.42), inset 0 1px 0 rgba(255,255,255,.05); }
+  button, .tile { touch-action:manipulation; }
+  .tile { position:relative; display:flex; align-items:center; justify-content:center; border-radius:7px; font-size:clamp(13px, 4.6vw, 21px);
+    background:linear-gradient(180deg, rgba(30,42,76,.55), rgba(24,34,64,.55)); border:1px solid rgba(70,95,155,.22);
+    transition:transform .09s ease, border-color .15s ease; }
+  .tile.alt { background:linear-gradient(180deg, rgba(34,47,86,.6), rgba(27,38,72,.6)); }
+  .tile.pulse { transform:scale(1.1); }
+  .tile.wall { background:linear-gradient(180deg,#233058,#151f3d); border-color:rgba(70,95,160,.45);
+    box-shadow:inset 0 2px 0 rgba(255,255,255,.07), inset 0 -3px 6px rgba(0,0,0,.35); }
+  .tile.door { background:linear-gradient(180deg,#2a2410,#1c1a0c); border-color:var(--gold); box-shadow:0 0 10px rgba(233,184,74,.18); }
+  .tile.door.open { background:linear-gradient(180deg,#12321f,#0c2415); border-color:var(--green); box-shadow:0 0 14px rgba(69,214,140,.35); animation:pop .3s ease; }
+  .tile.door.donedoor { border-color:var(--gold2); box-shadow:0 0 12px rgba(233,184,74,.35); }
+  .tile.hubdoor { cursor:pointer; }
+  .tile.hubdoor:hover { border-color:var(--gold2); transform:translateY(-1px); }
+  .tile.hubdoor.locked { opacity:.42; filter:grayscale(.75); }
+  .tile.station { background:linear-gradient(180deg,#27345f,#1a2450); border-color:var(--bd2); cursor:pointer; }
+  .tile.station:hover { border-color:var(--gold); transform:translateY(-1px); }
+  .tile.station.done { border-color:var(--green); opacity:.8; }
+  .tile.station.done::before { content:"✓"; position:absolute; top:-6px; right:-5px; z-index:4; font-size:9px; font-style:normal;
+    background:var(--green); color:#04241a; border-radius:99px; width:14px; height:14px; display:flex; align-items:center; justify-content:center; font-weight:500; }
+  .tile.station::after { content:attr(data-label); position:absolute; bottom:-8px; left:50%; transform:translateX(-50%); z-index:3;
+    font-size:8.5px; letter-spacing:1px; color:var(--gold2); background:#0b1226; border:1px solid var(--bd2); border-radius:6px; padding:0 5px; white-space:nowrap; }
+  .tile.player { z-index:2; animation:bob 1.6s ease-in-out infinite; filter:drop-shadow(0 3px 6px rgba(0,0,0,.5)) drop-shadow(0 0 8px rgba(233,184,74,.35)); cursor:default; }
+
+  /* 方向键 */
+  .dpad { display:flex; gap:8px; justify-content:center; padding:6px 0 2px; }
+  .dpad button { width:52px; height:44px; border-radius:10px; border:1px solid var(--bd2); background:rgba(20,30,58,.85); color:var(--gold2); font-size:17px; }
+  .dpad button:active { transform:scale(.94); border-color:var(--gold); }
+  .hint-line { text-align:center; font-size:10.5px; color:var(--mut); opacity:.8; padding-bottom:4px; }
+
+  /* ============ 弹层 ============ */
+  .overlay { position:fixed; inset:0; z-index:50; display:none; align-items:center; justify-content:center; background:rgba(4,8,18,.8); padding:16px; }
+  .overlay.show { display:flex; }
+  .modal { width:100%; max-width:520px; max-height:88dvh; overflow-y:auto; border-radius:16px; border:1px solid var(--bd2); padding:18px 18px 16px;
+    background:linear-gradient(180deg, rgba(24,35,66,.98), rgba(13,20,40,.99)); animation:pop .3s ease; }
+  .m-head { display:flex; align-items:center; gap:9px; margin-bottom:11px; padding-bottom:9px; border-bottom:1px solid var(--bd); }
+  .m-head .m-t { font-size:14px; font-weight:500; color:var(--gold2); letter-spacing:1px; }
+  .m-head .x { margin-left:auto; width:28px; height:28px; border-radius:8px; border:1px solid var(--bd2); background:transparent; color:var(--mut); font-size:13px; }
+  .m-sub { font-size:12px; color:var(--mut); line-height:1.85; margin-bottom:12px; }
+  .m-sub b { color:var(--tx); font-weight:500; }
+  .m-fb { margin-top:11px; font-size:12px; line-height:1.8; border-radius:9px; padding:8px 12px; display:none; }
+  .m-fb.show { display:block; animation:rise .3s ease; }
+  .m-fb.ok { color:var(--green); border:1px solid rgba(69,214,140,.45); background:rgba(69,214,140,.08); }
+  .m-fb.no { color:var(--red); border:1px dashed rgba(242,109,109,.45); }
+
+  /* 扫描 */
+  .scan-rows { display:flex; flex-direction:column; gap:6px; }
+  .scan-row { display:flex; gap:9px; align-items:center; font-family:Consolas,monospace; font-size:11px; color:#cfe0ff;
+    background:var(--code); border:1px solid var(--bd); border-radius:8px; padding:8px 11px; text-align:left; }
+  .scan-row .idx { color:var(--mut); }
+  .scan-row.sel { border-color:var(--gold); background:rgba(233,184,74,.12); }
+  .scan-row.right { border-color:var(--green); }
+  .scan-row.wrongpick { border-color:var(--red); animation:shake .3s; }
+
+  /* 配对 */
+  .pair-grid { display:grid; grid-template-columns:1fr 1fr; gap:8px; }
+  .pair-card { font-size:11.5px; line-height:1.6; padding:10px 11px; border-radius:10px; border:1px solid var(--bd); background:var(--panel2); color:var(--tx); text-align:left; min-height:52px; }
+  .pair-card b { color:var(--gold2); font-weight:500; display:block; margin-bottom:3px; }
+  .pair-card.sel { border-color:var(--gold); background:rgba(233,184,74,.1); }
+  .pair-card.matched { border-color:var(--green); background:rgba(69,214,140,.1); opacity:.6; pointer-events:none; }
+
+  /* 拼图 */
+  .skel { font-family:Consolas,monospace; font-size:11.5px; line-height:2; background:var(--code); border:1px solid var(--bd2); border-radius:10px; padding:11px 13px; white-space:pre; overflow-x:auto; color:#cfe0ff; }
+  .skel .k { color:#ff8f7a; } .skel .s { color:#a5d6ff; } .skel .c { color:#7f8db0; font-style:italic; }
+  .blank { display:inline-block; min-width:64px; text-align:center; font-family:inherit; font-size:11px; border:1.5px dashed var(--gold); border-radius:6px; background:rgba(233,184,74,.08); color:var(--gold2); padding:1px 8px; margin:0 1px; }
+  .blank.filled { border-style:solid; background:rgba(233,184,74,.16); }
+  .blank.err { animation:shake .35s; border-color:var(--red); color:var(--red); }
+  .toks { display:flex; flex-wrap:wrap; gap:7px; margin-top:11px; }
+  .tok { font-family:Consolas,monospace; font-size:11px; padding:7px 12px; border-radius:8px; border:1px solid var(--bd2); background:rgba(26,38,72,.85); color:#cfe0ff; }
+  .tok.used { visibility:hidden; }
+
+  /* 保险柜 */
+  .lock-box { text-align:center; padding:8px 0 2px; }
+  .lock-display { font-family:Consolas,monospace; font-size:30px; letter-spacing:6px; color:var(--gold2); background:var(--code); border:1px solid var(--bd2); border-radius:10px; padding:10px 16px; margin-bottom:12px; min-width:180px; display:inline-block; }
+  .lock-pad { display:grid; grid-template-columns:repeat(3,64px); gap:8px; justify-content:center; }
+  .lock-pad button { height:44px; border-radius:9px; border:1px solid var(--bd2); background:rgba(26,38,72,.85); color:var(--tx); font-size:16px; font-family:Consolas,monospace; }
+  .lock-pad button:active { border-color:var(--gold); }
+  .lock-unit { font-size:11px; color:var(--mut); margin-top:8px; }
+
+  /* 推理板 */
+  .evi-line { display:flex; gap:8px; font-size:11.5px; color:var(--mut); line-height:1.75; background:rgba(16,24,48,.6); border:1px dashed var(--bd2); border-radius:9px; padding:8px 11px; margin-bottom:7px; }
+  .evi-line .pin { color:var(--gold); }
+
+  /* 选项 */
+  .opt { display:flex; gap:9px; width:100%; text-align:left; font-size:12px; line-height:1.65; color:var(--tx);
+    background:var(--panel2); border:1px solid var(--bd); border-radius:10px; padding:10px 12px; margin-top:8px; }
+  .opt:hover { border-color:var(--gold); }
+  .opt .key { flex:none; width:20px; height:20px; border-radius:5px; background:#1c2a4e; display:flex; align-items:center; justify-content:center; font-size:11px; color:var(--blue); }
+  .opt.right { border-color:var(--green); background:rgba(69,214,140,.1); }
+  .opt.right .key { background:var(--green); color:#06281a; }
+  .opt.opt-wrong { border-color:var(--red); animation:shake .3s ease; opacity:.75; }
+
+  /* 图鉴 / 徽章 */
+  .gallery { display:grid; grid-template-columns:repeat(auto-fill,minmax(148px,1fr)); gap:8px; }
+  .g-card { border:1px solid var(--bd); border-radius:10px; padding:10px 11px; font-size:10.5px; line-height:1.7; color:var(--mut); background:var(--panel2); }
+  .g-card b { display:block; color:var(--gold2); font-weight:500; font-size:11.5px; margin-bottom:3px; }
+  .g-card.locked { opacity:.4; filter:grayscale(.8); }
+  .md-badge { position:relative; width:100%; max-width:380px; border-radius:18px; border:1px solid var(--gold); padding:28px 22px 22px; text-align:center; overflow:hidden;
+    background:radial-gradient(420px 200px at 50% -40px, #2e4179, #101a36 72%); animation:pop .4s ease; }
+  .md-badge .rays { position:absolute; top:-80px; left:50%; width:290px; height:290px; transform:translateX(-50%); border-radius:50%; pointer-events:none; opacity:.15; animation:spin 24s linear infinite;
+    background:conic-gradient(from 0deg, transparent 0 14deg, var(--gold) 14deg 24deg, transparent 24deg 44deg, var(--gold) 44deg 52deg, transparent 52deg 76deg, var(--gold) 76deg 84deg, transparent 84deg 108deg, var(--gold) 108deg 118deg, transparent 118deg 150deg, var(--gold) 150deg 158deg, transparent 158deg 194deg, var(--gold) 194deg 202deg, transparent 202deg 232deg, var(--gold) 232deg 240deg, transparent 240deg 272deg, var(--gold) 272deg 280deg, transparent 280deg 316deg, var(--gold) 316deg 324deg, transparent 324deg 360deg); }
+  .md-badge .medal { position:relative; font-size:48px; filter:drop-shadow(0 5px 16px rgba(233,184,74,.45)); }
+  .md-badge .mt { font-family:Georgia,serif; letter-spacing:4px; font-size:13px; color:var(--gold2); margin-top:8px; }
+  .md-badge .mn { font-size:21px; font-weight:500; margin:6px 0 8px; }
+  .md-badge .dd { font-size:11.5px; color:var(--mut); line-height:1.9; margin-bottom:15px; }
+  .md-badge .dd b { color:var(--gold); font-weight:500; }
+
+  /* toast */
+  #toast { position:fixed; left:50%; bottom:86px; transform:translateX(-50%); z-index:80; background:rgba(12,18,36,.96); border:1px solid var(--bd2);
+    color:var(--tx); font-size:12px; padding:9px 16px; border-radius:10px; display:none; max-width:86%; text-align:center; line-height:1.6; }
+  #toast.show { display:block; animation:rise .25s ease; }
+
+  .hidden-door { border-color:var(--purple) !important; }
+  .levelup { font-size:11px; color:var(--gold2); }
+</style>
+</head>
+<body>
+<div id="app">
+
+  <!-- ============ 主页 ============ -->
+  <div id="scr-home">
+    <div class="emblem">🕵️</div>
+    <h1 class="title">指标探案馆<br>数字侦探局</h1>
+    <p class="subtitle">走格子 · 破谜题 · 集证据 · 开锁结案<br>顺便把 11 个指标的口径学透</p>
+    <div class="mech">
+      <span>🧭 网格探索</span><span>🔍 异常扫描</span><span>🧩 SQL 拼图</span><span>🔐 数字保险柜</span><span>🗂️ 口径配对</span><span>🏆 12 徽章</span>
+    </div>
+    <div style="display:flex; flex-direction:column; gap:10px; width:min(300px,88%); margin-top:20px">
+      <button class="btn-main" id="btn-start">进 入 侦 探 局</button>
+      <button class="btn-mini" id="btn-reset" style="align-self:center; border:none; background:transparent; opacity:.6">重置存档</button>
+    </div>
+    <div class="rankbar">
+      <span id="home-rank">🕵️ 见习侦探</span>
+      <span class="xp"><i id="home-xp" style="width:10%"></i></span>
+      <span>🛡️ <b id="home-badges">0</b>/12</span>
+    </div>
+    <div class="home-foot">单文件 · 零依赖 · 进度本地保存 ｜ 玩法换皮自 GitHub 开源游戏：Vim Adventures 式走格子 · OverTheWire 式开锁推进 · Flexbox Froggy 式即时反馈解谜 · SQL Murder Mystery 式证据结案<br>深度模式：每案完整卷宗与可复现 SQL 见 <a class="link" href="../cases/第0关-新人报到.md">cases/</a></div>
+  </div>
+
+  <!-- ============ 场景（大厅/案件房间共用） ============ -->
+  <div id="scr-scene" hidden>
+    <div class="hud">
+      <span class="case-tag" id="hud-title">侦探局大厅</span>
+      <span id="hud-evi" class="evi-hud" hidden><i>🧾</i><i>🗂️</i><i>🖥️</i><i>🔐</i></span>
+      <span class="clock" id="hud-clock" hidden>05:00</span>
+      <span class="sp"></span>
+      <span id="hud-level" style="color:var(--mut)">🎖️ 见习侦探</span>
+      <span class="medal">🛡️ <b id="hud-badges">0</b>/12</span>
+      <button class="btn-mini" id="btn-home" style="padding:4px 10px">主页</button>
+    </div>
+    <div class="scene-wrap"><div id="grid"></div></div>
+    <div class="dpad" id="dpad">
+      <button data-d="up" aria-label="上">▲</button>
+      <button data-d="left" aria-label="左">◀</button>
+      <button data-d="down" aria-label="下">▼</button>
+      <button data-d="right" aria-label="右">▶</button>
+    </div>
+    <div class="hint-line" id="scene-hint">方向键 / WASD 移动 · 也可以直接点格子走过去</div>
+  </div>
+
+  <!-- ============ 弹层 ============ -->
+  <div class="overlay" id="modal">
+    <div class="modal">
+      <div class="m-head"><span class="m-t" id="m-title"></span><button class="x" id="m-close" aria-label="关闭">✕</button></div>
+      <div id="m-body"></div>
+      <div class="m-fb" id="m-fb" aria-live="polite"></div>
+    </div>
+  </div>
+
+  <div class="overlay" id="badge-modal" role="dialog" aria-modal="true" aria-label="徽章解锁">
+    <div class="md-badge">
+      <div class="rays"></div>
+      <div class="medal" id="md-ico">🔍</div>
+      <div class="mt">BADGE UNLOCKED</div>
+      <div class="mn" id="md-name"></div>
+      <p class="dd" id="md-desc"></p>
+      <button class="btn-main" id="md-claim" style="letter-spacing:2px">收下徽章</button>
+    </div>
+  </div>
+
+  <div class="overlay" id="final-modal" role="dialog" aria-modal="true" aria-label="通关">
+    <div class="md-badge">
+      <div class="medal">🏅</div>
+      <div class="mt">CASE CLOSED</div>
+      <div class="mn">首席侦探</div>
+      <p class="dd">12 枚徽章集齐，画像挂进了侦探局大厅。<br>祖训后半句也归你了：<b>「而侦探的工作，就是让口径无处可藏。」</b></p>
+      <button class="btn-main" id="final-ok" style="letter-spacing:2px">结 案</button>
+    </div>
+  </div>
+
+  <div id="toast" aria-live="polite"></div>
+</div>
+
+<script>
+(function () {
+  'use strict';
+  var $ = function (id) { return document.getElementById(id); };
+
+  /* ================= 案件数据 ================= */
+  /* scan: rows 为现场数据行, bad 为需点选的异常行下标(0起)
+     pairs: 口径配对 [名称, 释义] × 3
+     lock: 数字保险柜 {label 题面, code 答案, unit 单位, hint}
+     dec: 终端 SQL 拼图 {intro, skel, toks, ans}
+     vq: 出门推理 {q, opts} */
+
+  var CASES = [
+  { id:0, name:'新人报到', star:1, metric:'DAU 入门', client:'侦探局练习库', db:'case00_newbie', icon:'🛡️',
+    chips:['DAU=当日去重活跃人数','人次≠人数','跨天去重看整体'],
+    recap:'教学关。练习库的登录表里藏着「人次 vs 人数」的第一课。',
+    scan:{ hint:'点击所有属于 u1 的登录记录——一天登录 2 次，DAU 只能算 1 人',
+      rows:['10-01 08:12 u1 登录','10-01 21:40 u1 登录','10-01 09:05 u2 登录','10-01 20:15 u3 登录','10-02 19:20 u4 登录','10-02 22:10 u5 登录','10-03 18:40 u6 登录','10-03 21:15 u7 登录'], bad:[0,1] },
+    pairs:[['DAU','当日有效互动的去重用户数'],['登录人次','COUNT(*) 数行数，不去重'],['跨天去重','去重范围覆盖整个时间窗']],
+    lock:{ label:'10-01 ～ 10-03 跨天去重后，一共多少个用户来过？', code:'7', unit:'人', hint:'不是 3+4+5=12，u1 三天都来只算 1 次' },
+    dec:{ intro:'练习任务：把「每日 DAU」补全（教学关不计时）',
+      skel:`<span class="k">SELECT</span>
+  <span class="f">DATE</span>(login_time) <span class="k">AS</span> login_date,
+  <span class="f">COUNT</span>(*) <span class="k">AS</span> login_times,
+  【1】 <span class="k">AS</span> dau
+<span class="k">FROM</span> user_login_log
+<span class="k">GROUP BY</span> 【2】;`,
+      toks:['COUNT(DISTINCT user_id)','DATE(login_time)','COUNT(*)','user_id','login_time','MAX(user_id)'],
+      ans:{'1':'COUNT(DISTINCT user_id)','2':'DATE(login_time)'} },
+    vq:{ q:'老板问「这三天一共多少人来过」——哪个算法是对的？',
+      opts:[
+        {t:'三天 DAU 相加：3+4+5 = 12 人',fb:'❌ u1 三天都来被算了 3 次——跨天必须整体去重。'},
+        {t:'三天合并 COUNT(DISTINCT user_id) = 7 人',fb:'✅ 去重范围覆盖整个时间窗。7 人才是真实答案。',ok:true},
+        {t:'取最大一天的 DAU：5 人',fb:'❌ 那是单日峰值，不是三日去重人数。'}
+      ]},
+    verdict:{ sum:'<b>结案：</b>DAU = 去重人数；跨天统计时去重范围跟着时间窗走。',
+      sol:'SELECT DATE(login_time), COUNT(*), COUNT(DISTINCT user_id)\nFROM user_login_log GROUP BY DATE(login_time);' },
+    badge:{ico:'🛡️',name:'入职打卡',desc:'完成入职第一课。解锁技能卡《人次 vs 人数》'},
+    teaser:'陈探长：「明天有个正经委托——咕噜严选的 DAU 一夜跌了三分之一，报表组自己人还打起来了。」' },
+
+  { id:1, name:'DAU暴跌疑云', star:2, metric:'DAU', client:'咕噜严选 · 电商', db:'case01_dau', icon:'🔍',
+    chips:['DAU 四大口径','COALESCE 空值兜底','埋点完整性'],
+    recap:'加急件：DAU 从 12 掉到 8，一夜跌三分之一。两份报表一个说 8 一个说 4。',
+    scan:{ hint:'点击所有「弱网重试的重复上报行」——同一用户同一天、间隔几秒的两次 launch',
+      rows:['10-13 08:01 u1 ios launch','10-13 10:12 游客(NULL) launch','10-14 07:58:00 u5 android launch','10-14 07:58:06 u5 android launch','10-15 08:02 u5 android launch','10-15 19:55 u7 android launch','10-16 19:58:00 u7 android launch','10-16 19:58:05 u7 android launch'], bad:[3,7] },
+    pairs:[['登录口径','只数登录用户，游客被整体漏掉'],['行为口径','任一主动行为去重，最常用'],['设备口径','device_id 去重，一人多机算多人']],
+    lock:{ label:'10-15 当天的全量 DAU（注册+游客）是多少？', code:'8', unit:'人', hint:'COUNT(DISTINCT COALESCE(user_id, device_id))' },
+    dec:{ intro:'把「每日 DAU（注册+游客全量去重）」查询补全',
+      skel:`<span class="k">SELECT</span>
+  <span class="f">DATE</span>(【1】) <span class="k">AS</span> stat_date,
+  <span class="f">COUNT</span>(<span class="k">DISTINCT</span> 【2】) <span class="k">AS</span> dau
+<span class="k">FROM</span> app_event_log
+<span class="k">WHERE</span> event_name = <span class="s">'app_launch'</span>
+<span class="k">GROUP BY</span> 【3】;`,
+      toks:['event_time','COALESCE(user_id, device_id)','DATE(event_time)','COUNT(*)','login_time','user_id','device_id','TRIM(user_id)'],
+      ans:{'1':'event_time','2':'COALESCE(user_id, device_id)','3':'DATE(event_time)'} },
+    vq:{ q:'10-15「消失的 4 人」真正去哪了？',
+      opts:[
+        {t:'真的流失了：竞品挖走了 iOS 用户',fb:'❌ 案发当天的版本 3.2.0 是更近的嫌疑人。'},
+        {t:'iOS 埋点丢失：人来了但没留痕',fb:'✅ 10-15 iOS 端 DAU=0，launch 埋点字段升级失败——用户没有消失，是埋点消失了。',ok:true},
+        {t:'游客没被统计：口径少算了',fb:'⚠️ 那是报表偏低的原因之一，但 10-15 额外少的 4 人是 iOS 用户。'}
+      ]},
+    verdict:{ sum:'<b>结案：</b>用户没有消失，是 iOS 的埋点消失了。报表统一 COALESCE 全量去重。',
+      sol:"SELECT DATE(event_time), COUNT(DISTINCT COALESCE(user_id, device_id)) AS dau\nFROM app_event_log WHERE event_name='app_launch'\nGROUP BY DATE(event_time); -- 12/12/8/12" },
+    badge:{ico:'🔍',name:'埋点猎人',desc:'识破「用户凭空消失」假象。等级：见习侦探 → C级侦探'},
+    teaser:'深夜，启航课堂两位大佬吵起来了：「人均月活跃 8.5 天！」「最多 5 天！」——同一批学生，你站谁？' },
+
+  { id:2, name:'活跃天数口径迷局', star:2, metric:'月活跃天数', client:'启航课堂 · 在线教育', db:'case02_active_days', icon:'🎯',
+    chips:['人天去重铁律','学习口径=听课+作业','跨天按发生时刻归天'],
+    recap:'产品说人均月活跃 8.5 天，教务说撑死 5 天。报表 SQL 能跑通，但数字是「次数」不是「天数」。',
+    scan:{ hint:'点击所有「不能计入学习天数」的行为行——逛逛和登录只是触达',
+      rows:['s1 watch_course 09-01','s1 login 09-05','s1 browse 09-05','s2 watch_course 09-02','s5 browse 09-10','s5 browse 09-11','s5 browse 09-12','s3 watch_course 09-24'], bad:[2,4,5,6] },
+    pairs:[['触达口径（宽）','任何行为都算活跃天'],['学习口径（严）','听课/交作业才算，教育行业标准'],['次数口径（错）','行为条数÷人数——把次数当天数']],
+    lock:{ label:'核心学习口径下，真实人均月活跃天数是？', code:'3', unit:'天', hint:'12 个学习日 ÷ 4 名学习用户' },
+    dec:{ intro:'补全「人均月活跃天数（学习口径）」',
+      skel:`<span class="k">WITH</span> learn_days <span class="k">AS</span> (
+  <span class="k">SELECT</span> user_id, <span class="f">DATE</span>(behavior_time) <span class="k">AS</span> d
+  <span class="k">FROM</span> study_behavior_log
+  <span class="k">WHERE</span> behavior_type 【1】
+  <span class="k">GROUP BY</span> 【2】
+)
+<span class="k">SELECT</span> <span class="f">COUNT</span>(*) / <span class="f">COUNT</span>(<span class="k">DISTINCT</span> user_id) <span class="k">AS</span> avg_days
+<span class="k">FROM</span> learn_days;`,
+      toks:["IN ('watch_course','homework')","user_id, DATE(behavior_time)","IN ('login','browse')",'DATE(behavior_time)','COUNT(*)','user_id'],
+      ans:{'1':"IN ('watch_course','homework')",'2':'user_id, DATE(behavior_time)'} },
+    vq:{ q:'8.5 天的病根是什么？',
+      opts:[
+        {t:'数据组造假',fb:'❌ SQL 能跑通，只是算的根本不是「天数」。'},
+        {t:'次数当天数 + 分子分母错位',fb:'✅ 总行为 34 次 ÷ 核心用户 4 人 = 8.5：分子含逛逛登录、分母只数学习用户。',ok:true},
+        {t:'教务主任记错了课表',fb:'❌ 教务的直觉（3~5 天）反而和真实值 3.0 天吻合。'}
+      ]},
+    verdict:{ sum:'<b>结案：</b>真实人均学习天数 3.0 天。双口径并列：宽口径看粘性、学习口径看强度。',
+      sol:"WITH learn_days AS (SELECT user_id, DATE(behavior_time) AS d\nFROM study_behavior_log WHERE behavior_type IN ('watch_course','homework')\nGROUP BY user_id, DATE(behavior_time))\nSELECT COUNT(*)/COUNT(DISTINCT user_id) FROM learn_days; -- 12/4 = 3.0" },
+    badge:{ico:'🎯',name:'去重圣手',desc:'让 8.5 和 5 在 3.0 面前握手言和。'},
+    teaser:'上午十点，阿花的电话打进局里，声音发抖：「次日留存只剩 25%！历史一直 45%！老板今晚要回滚改版——」' },
+
+  { id:3, name:'次日留存异常缩水案', star:3, metric:'次日留存率', client:'深夜食记 · 内容社区', db:'case03_retention', icon:'⏳',
+    chips:['留存四要素','新增 vs 全量永不互比','多源交叉验证'],
+    recap:'9-20 批次次日留存 25%，历史 45%。有用户说「第二天刷了两小时菜谱」，却不在回访名单里。',
+    scan:{ hint:'点击所有「次日回来了但只浏览」的用户行——登录埋点丢了，人在社区里',
+      rows:['n1 登录 9-21 08:32','n2 登录 9-21 09:14','n7 浏览 9-21 09:12','n8 浏览 9-21 20:05','n9 浏览 9-21 21:40','n10 浏览 9-22 09:30','n11 浏览 9-22 15:20','o1 登录 9-21 08:10'], bad:[2,3,4] },
+    pairs:[['新增留存','分母=当日全部新增，看拉新质量'],['全量留存','分母=当日活跃用户，天然更高'],['时间窗口','严格次日 0~24 点，窗口没关就失真']],
+    lock:{ label:'9-20 批次的真实次日留存率是？', code:'45', unit:'%', hint:'登录 6 人 + 免登录浏览 3 人 = 9/20' },
+    dec:{ intro:'补全「真实次日留存」（登录 ∪ 浏览，窗口关严）',
+      skel:`<span class="k">WITH</span> next_active <span class="k">AS</span> (
+  <span class="k">SELECT</span> user_id <span class="k">FROM</span> user_login
+    <span class="k">WHERE</span> <span class="f">DATE</span>(login_time) 【1】
+  【2】
+  <span class="k">SELECT</span> user_id <span class="k">FROM</span> page_view_log
+    <span class="k">WHERE</span> <span class="f">DATE</span>(view_time) = <span class="s">'2026-09-21'</span>
+)
+<span class="k">SELECT</span> <span class="f">COUNT</span>(*) <span class="k">AS</span> new_users,
+  <span class="f">COUNT</span>(<span class="k">DISTINCT</span> a.user_id) <span class="k">AS</span> returned
+<span class="k">FROM</span> new_users n <span class="k">LEFT JOIN</span> next_active a
+  <span class="k">ON</span> a.user_id = n.user_id;`,
+      toks:["= '2026-09-21'","UNION",">= '2026-09-21'","UNION ALL","JOIN","LIMIT 20"],
+      ans:{'1':"= '2026-09-21'",'2':'UNION'} },
+    vq:{ q:'25% 和 45% 之间差的 20 个百分点去哪了？',
+      opts:[
+        {t:'用户真的流失了',fb:'❌ 浏览日志把他们全找回来了。'},
+        {t:'报表时点过早 + 登录埋点丢失',fb:'✅ 18:00 拉报表（n6 20:30 才回）+ 3 人免登录浏览被登录口径漏掉。',ok:true},
+        {t:'全量留存口径才对',fb:'⚠️ 62.5% 是全量口径，和新增留存不可互比。'}
+      ]},
+    verdict:{ sum:'<b>结案：</b>真实次日留存 45.0%，改版清白，回滚叫停。',
+      sol:"WITH a AS (SELECT user_id FROM user_login WHERE DATE(login_time)='2026-09-21'\nUNION SELECT user_id FROM page_view_log WHERE DATE(view_time)='2026-09-21')\nSELECT COUNT(DISTINCT a.user_id)/COUNT(*)*100 FROM new_users n\nLEFT JOIN a ON a.user_id=n.user_id; -- 9/20 = 45.0%" },
+    badge:{ico:'⏳',name:'时序侦探',desc:'在回滚落地前两小时叫停了一场冤案。'},
+    teaser:'拾光笔记的老张兴奋得发慌：「转化率 53%！行业才 10~15%！要追加三倍预算——可这数好得不像话。」' },
+
+  { id:4, name:'注册转化率虚高真相', star:3, metric:'注册转化率', client:'拾光笔记 · 工具App', db:'case04_register_cvr', icon:'🧮',
+    chips:['漏斗节点口径','双侧清洗','链路断裂取证'],
+    recap:'转化率 53.3%，真实下载没动静，注册名单里混着凌晨两点的「夜猫子」。',
+    scan:{ hint:'点击所有「刷量团伙的注册行」——凌晨 2 点、单设备批量账号',
+      rows:['r01 设备d05 白天注册','r02 设备d06 白天注册','f01 设备spider_01 02:02 注册','f07 设备spider_02 02:09 注册','f13 设备spider_03 02:20 注册','r06 设备d10 白天注册','f05 设备spider_01 02:07 注册','f18 设备spider_03 02:26 注册'], bad:[2,3,4,6,7] },
+    pairs:[['点击→注册','投放侧口径，分母=去重设备'],['下载→注册','产品侧口径，看落地页体验'],['曝光→注册','广告主视角，衡量素材吸引力']],
+    lock:{ label:'双侧剔除刷量后，真实注册转化率是？', code:'14', unit:'%', hint:'真实注册 6 ÷ 真实点击设备 43' },
+    dec:{ intro:'补全「真实转化率」（分子分母双侧剔除刷量设备）',
+      skel:`<span class="k">SELECT</span> <span class="f">ROUND</span>(
+  (<span class="k">SELECT</span> <span class="f">COUNT</span>(*) <span class="k">FROM</span> register_info
+    <span class="k">WHERE</span> device_id 【1】) /
+  (<span class="k">SELECT</span> 【2】 <span class="k">FROM</span> promo_click_log
+    <span class="k">WHERE</span> device_id <span class="k">NOT LIKE</span> <span class="s">'spider%'</span>) * 100, 1
+) <span class="k">AS</span> cvr_real;`,
+      toks:["NOT LIKE 'spider%'",'COUNT(DISTINCT device_id)',"LIKE 'spider%'",'COUNT(*)','COUNT(device_id)','DISTINCT promo_id'],
+      ans:{'1':"NOT LIKE 'spider%'",'2':'COUNT(DISTINCT device_id)'} },
+    vq:{ q:'53.3% 的水分从哪来？',
+      opts:[
+        {t:'渠道标记被伪装了',fb:'⚠️ channel 字段确实被伪装，但那是表象——字段能造假，行为特征造不了。'},
+        {t:'双侧刷量：点击和注册两头下注',fb:'✅ 30 次机器点击稀释分母 + 18 个伪造账号注水分 子；spider_03 甚至没有点击记录。',ok:true},
+        {t:'真实用户太热情',fb:'❌ 真实转化 14%，正常水平。'}
+      ]},
+    verdict:{ sum:'<b>结案：</b>真实转化率 14.0%。三倍预算暂缓，反作弊规则上线。',
+      sol:"SELECT 6/43*100; -- 14.0%\n-- 分子：非 spider 设备注册数；分母：非 spider 去重点击设备数" },
+    badge:{ico:'🧮',name:'漏斗拆解师',desc:'拦下三倍预算失误，还老张清白。'},
+    teaser:'财务王姐抱着一摞报表闯进来：「同一周数据，客单价一个说 73.5、一个说 99.6。老板明天要一个数！」' },
+
+  { id:5, name:'客单价异常波动事件', star:3, metric:'客单价', client:'咕噜严选 · 电商', db:'case05_aov', icon:'💰',
+    chips:['分子分母同一批订单','实付 vs 原价','拆单合并口径'],
+    recap:'两份周报打架：73.5 vs 99.6。退款、拆单、优惠券，三股暗流藏在 22 张订单里。',
+    scan:{ hint:'点击所有「不应计入客单价」的订单行——退款单和未支付取消单',
+      rows:['o01 paid 实付130','o02 子单 paid 实付45','o05 refunded 实付113','o07 cancelled 实付0','o12 refunded 实付82','o13 paid 实付208','o16 cancelled 实付0','o21 refunded 实付39'], bad:[2,3,4,6,7] },
+    pairs:[['实付口径','用户视角：paid 实付 ÷ paid 订单数（标准）'],['原价/GMV 口径','商家视角：不扣优惠，对账用'],['人均实付','实付合计 ÷ 去重下单人数，看钱包']],
+    lock:{ label:'正确客单价（有效支付订单实付口径）是？', code:'95', unit:'元', hint:'1617 元 ÷ 17 单' },
+    dec:{ intro:'补全「客单价 + 人均实付」',
+      skel:`<span class="k">SELECT</span>
+  <span class="f">ROUND</span>(<span class="f">SUM</span>(pay_amount) / <span class="f">COUNT</span>(*), 1) <span class="k">AS</span> aov_correct,
+  <span class="f">ROUND</span>(<span class="f">SUM</span>(pay_amount) / 【1】, 1) <span class="k">AS</span> avg_per_user
+<span class="k">FROM</span> order_info
+<span class="k">WHERE</span> 【2】;`,
+      toks:['COUNT(DISTINCT user_id)',"order_status = 'paid'",'COUNT(*)','COUNT(DISTINCT order_id)','SUM(goods_amount)'],
+      ans:{'1':'COUNT(DISTINCT user_id)',"2":"order_status = 'paid'"} },
+    vq:{ q:'报表 A 的 73.5 病在哪？',
+      opts:[
+        {t:'分子剔了退款、分母照单全收',fb:'✅ 1617 ÷ 22 = 73.5：退款单被剔了钱没剔名，5 个零金额分母砸低了客单价。',ok:true},
+        {t:'优惠金额没扣',fb:'❌ 那是报表 B（99.6）的病：原价冒充实付。'},
+        {t:'拆单没有合并',fb:'⚠️ 拆单会稀释客单价，但订单口径 95.1 本身成立——另配人均实付即可。'}
+      ]},
+    verdict:{ sum:'<b>结案：</b>真实客单价 95.1 元，人均实付 115.5 元。报表A 偏低 21.6 元（-22.7%）。',
+      sol:"SELECT ROUND(SUM(pay_amount)/COUNT(*),1) AS aov, -- 95.1\n  ROUND(SUM(pay_amount)/COUNT(DISTINCT user_id),1) AS per_user -- 115.5\nFROM order_info WHERE order_status='paid';" },
+    badge:{ico:'💰',name:'金算盘',desc:'给了王姐一个数，还白送了另一个数。'},
+    teaser:'鲜果盒子的小林眼睛红红的：「老板说复购率 65% 要么造假要么口径造假——可我的 SQL 明明能跑通。」' },
+
+  { id:6, name:'复购率统计乌龙案', star:3, metric:'复购率', client:'鲜果盒子 · 生鲜电商', db:'case06_repurchase', icon:'🔁',
+    chips:['队列+锚点+窗口','月内多单率≠复购率','EXISTS 判定复购'],
+    recap:'65% 的「复购率」撞上行业 30~40% 的常识带。能跑通的 SQL 不等于对的口径。',
+    scan:{ hint:'点击所有「当月首购当月复买」的用户行——首购锚点都没出当月，不算复购证据',
+      rows:['f01 7月首购 → 8月再购','f06 7月首购 → 9月再购','m01 9月首购 → 9月再买','m02 9月首购 → 9月再买','f08 7月仅首购一次','h06 8月首购+8月复买','m03 9月仅首购一次','f02 7月首购 → 9月再购'], bad:[2,3] },
+    pairs:[['周期复购率','X月首购用户中 N 天内再购比例（标准）'],['月内多单率','当月下单≥2次占比，≠复购率'],['任意两单','不锚首购不限窗口，只能粗查']],
+    lock:{ label:'7 月首购用户的 90 天复购率是？', code:'35', unit:'%', hint:'20 人队列中 7 人复购' },
+    dec:{ intro:'补全「90 天复购率」判定',
+      skel:`<span class="k">WITH</span> first_order <span class="k">AS</span> (
+  <span class="k">SELECT</span> user_id, 【1】 <span class="k">AS</span> first_time
+  <span class="k">FROM</span> order_info <span class="k">WHERE</span> order_status = <span class="s">'paid'</span>
+  <span class="k">GROUP BY</span> user_id
+  <span class="k">HAVING</span> first_time &gt;= <span class="s">'2026-07-01'</span> <span class="k">AND</span> first_time &lt; <span class="s">'2026-08-01'</span>
+)
+<span class="k">SELECT</span> <span class="f">COUNT</span>(*) <span class="k">AS</span> cohort_users,
+  <span class="f">SUM</span>(<span class="k">EXISTS</span>(<span class="k">SELECT</span> 1 <span class="k">FROM</span> order_info o2
+    <span class="k">WHERE</span> o2.user_id = f.user_id <span class="k">AND</span> o2.order_status = <span class="s">'paid'</span>
+      <span class="k">AND</span> o2.order_time &gt; f.first_time
+      <span class="k">AND</span> o2.order_time &lt; f.first_time + 【2】)) <span class="k">AS</span> repurchasers
+<span class="k">FROM</span> first_order f;`,
+      toks:['MIN(order_time)','INTERVAL 90 DAY','INTERVAL 30 DAY','MAX(order_time)','COUNT(*)','order_time'],
+      ans:{'1':'MIN(order_time)','2':'INTERVAL 90 DAY'} },
+    vq:{ q:'65% 其实是什么？',
+      opts:[
+        {t:'造假的复购率',fb:'❌ 数字是真的，名字是错的。'},
+        {t:'月内多单率：13/20，不是复购率',fb:'✅ 没有跨周期锚点。标准口径「7月首购用户90天复购率」= 35.0%，落回行业带。',ok:true},
+        {t:'行业均值算错了',fb:'❌ 30~40% 的行业带没错，错的是把多单率当复购率。'}
+      ]},
+    verdict:{ sum:'<b>结案：</b>65% 是月内多单率；「7月首购用户90天复购率」= 35.0%。指标改名后它依然合法有用。',
+      sol:"WITH f AS (SELECT user_id, MIN(order_time) AS first_time FROM order_info\nWHERE order_status='paid' GROUP BY user_id\nHAVING first_time>='2026-07-01' AND first_time<'2026-08-01')\nSELECT 7/20*100; -- 35.0%" },
+    badge:{ico:'🔁',name:'复购神探',desc:'替小林摘掉「数据造假」的帽子。'},
+    teaser:'浪潮视频的王总带着三个数来了：「竞对 30，我们 8 和 15——同一个 9 月，哪来的三个 ARPU？明天董事会。」' },
+
+  { id:7, name:'ARPU值偏差之谜', star:4, metric:'ARPU / ARPPU', client:'浪潮视频 · 内容平台', db:'case07_arpu', icon:'💎',
+    chips:['ARPU=总收入÷全量活跃','ARPPU=总收入÷付费用户','ARPU=ARPPU×付费率'],
+    recap:'三个 ARPU：竞对 30、我方 8、我方 15。凶手从来不在分子，就在分母。',
+    scan:{ hint:'点击所有「报表B漏算的收入行」——它只算了 VIP 订阅',
+      rows:['u01 vip_subscribe 30元','u21 single_pay 6元','u31 reward 打赏18元','u02 vip_subscribe 30元','u33 reward 打赏52元','u03 vip_subscribe 30元','u35 reward 打赏66元','u22 single_pay 6元'], bad:[1,2,4,6,7] },
+    pairs:[['ARPU','总收入 ÷ 全量活跃（含游客，COALESCE 去重）'],['ARPPU','总收入 ÷ 付费用户数，付费率越低差越大'],['分线人均','单收入线÷人数，不能叫 ARPU']],
+    lock:{ label:'9 月真正的 ARPU 是？', code:'8', unit:'元', hint:'总收入 976 ÷ 活跃 122 人' },
+    dec:{ intro:'补全「9 月 ARPU」（全收入线 + 全量活跃分母）',
+      skel:`<span class="k">SELECT</span> <span class="f">ROUND</span>(
+  (<span class="k">SELECT</span> 【1】 <span class="k">FROM</span> user_income_log
+    <span class="k">WHERE</span> income_time &lt; <span class="s">'2026-10-01'</span>) /
+  (<span class="k">SELECT</span> 【2】 <span class="k">FROM</span> user_active_log), 1
+) <span class="k">AS</span> arpu;`,
+      toks:['SUM(amount)','COUNT(DISTINCT COALESCE(user_id, device_id))','COUNT(DISTINCT user_id)','COUNT(*)','MAX(amount)',"SUM(income_type)"],
+      ans:{'1':'SUM(amount)','2':'COUNT(DISTINCT COALESCE(user_id, device_id))'} },
+    vq:{ q:'报表 B 的 15 元错在哪？',
+      opts:[
+        {t:'收入算多了',fb:'❌ 恰恰相反——它只算了 VIP 收入 600 元。'},
+        {t:'只算 VIP 收入 + 分母用付费用户',fb:'✅ 600 ÷ 40 = 15：双重错位，既不是 ARPU 也不是 ARPPU。真 ARPU=8.0，真 ARPPU=24.4。',ok:true},
+        {t:'付费用户数统计错了',fb:'❌ 40 个付费用户没错，错的是把它当 ARPU 的分母。'}
+      ]},
+    verdict:{ sum:'<b>结案：</b>ARPU 8.0（报表A 一直对）；15 = VIP收入÷付费用户；竞对 30 是 ARPPU 口径。ARPU = ARPPU × 付费率 = 24.4 × 32.8% ≈ 8.0。',
+      sol:"SELECT ROUND(976/122,1) AS arpu; -- 8.0\n-- ARPPU = 976/40 = 24.4；付费率 = 40/122 = 32.8%" },
+    badge:{ico:'💎',name:'价值鉴定师',desc:'让 8、15、30 在董事会各归其位。'},
+    teaser:'又是启航课堂——这次增长组和商业化组为付费率拍了桌子：「12%！」「5%！」两组都没算错 SQL。' },
+
+  { id:8, name:'付费率口径纠纷', star:4, metric:'用户付费率', client:'启航课堂 · 在线教育', db:'case08_pay_rate', icon:'🚪',
+    chips:['付费率四要素','0元单与退款不计入','新客/老客并列汇报'],
+    recap:'12% vs 5%，两组都没算错 SQL。付费率的分子，是全案最容易掺水的地方。',
+    scan:{ hint:'点击所有「不该算付费用户」的订单行——0 元体验单和整单退款',
+      rows:['u21 paid 199元','u22 paid 1299元','u22 paid 899元','u26 refunded 399元','u27 paid 0元(体验课)','u23 paid 499元','u07 paid 299元','u25 无任何订单'], bad:[3,4] },
+    pairs:[['月活跃付费率','有效付费用户 ÷ 全量活跃（标准）'],['新客付费率','分母=当月新增，并列汇报'],['订单口径','分子用订单数不去重——量纲就错了']],
+    lock:{ label:'9 月活跃用户付费率是？', code:'8', unit:'%', hint:'有效付费 4 人 ÷ 活跃 50 人' },
+    dec:{ intro:'补全「月付费率」（paid 且金额>0，去重用户）',
+      skel:`<span class="k">SELECT</span> <span class="f">ROUND</span>(
+  (<span class="k">SELECT</span> 【1】 <span class="k">FROM</span> order_info
+    <span class="k">WHERE</span> order_status 【2】 <span class="k">AND</span> 【3】) /
+  (<span class="k">SELECT</span> <span class="f">COUNT</span>(<span class="k">DISTINCT</span> user_id) <span class="k">FROM</span> user_active_log) * 100, 1
+) <span class="k">AS</span> pay_rate;`,
+      toks:['COUNT(DISTINCT user_id)','pay_amount > 0',"= 'paid'",'COUNT(order_id)','pay_amount = 0',"IN ('paid','refunded')"],
+      ans:{'1':'COUNT(DISTINCT user_id)',"2":"= 'paid'",'3':'pay_amount > 0'} },
+    vq:{ q:'12% 和 5% 各是谁？',
+      opts:[
+        {t:'12% 掺水（含0元+退款），5% 是新客口径',fb:'✅ 6 个「有订单的人」里 1 个 0 元单、1 个已退款；5% = 新客 1/20，合法但不是付费率。双线汇报：8.0% + 新客 5.0%。',ok:true},
+        {t:'12% 是对的，5% 在造假',fb:'❌ 两个数都不是造假——是两个不同指标。'},
+        {t:'取平均 8.5% 最公平',fb:'❌ 指标不是调解纠纷的 —— 8.0% 是算出来的，不是平均出来的。'}
+      ]},
+    verdict:{ sum:'<b>结案：</b>付费率 8.0%（4/50），新客付费率 5.0% 并列汇报。新客 5% vs 老客 10% 才是该跟进的真信号。',
+      sol:"SELECT ROUND(4/50*100,1); -- 8.0%\n-- 分子：COUNT(DISTINCT user_id) WHERE paid AND pay_amount>0" },
+    badge:{ico:'🚪',name:'付费守门员',desc:'把 0 元单和退款单挡在「付费用户」门外。'},
+    teaser:'翻页资讯的 Amy 被广告主围了：「CTR 从 5% 飙到 18%，点击翻倍转化没动，你们刷量了？」——凶手藏在凌晨三点。' },
+
+  { id:9, name:'点击率异常飙升案', star:4, metric:'CTR', client:'翻页资讯 · 信息流', db:'case09_ctr', icon:'📡',
+    chips:['分子双清洗','分母基线校准','爬虫指纹三件套'],
+    recap:'CTR 5.0% → 18.2%，四家广告主要求解释。点击率是分子分母都会撒谎的指标。',
+    scan:{ hint:'点击所有「无效点击行」——1 秒连点和凌晨三点的爬虫',
+      rows:['d01 点击 09:21','d02 点击 10:00:00','d02 点击 10:00:01','bot_001 点击 03:00:00','bot_001 点击 03:00:05','bot_001 点击 03:00:10','d03 点击 10:42','d08 点击 18:44'], bad:[2,3,4,5] },
+    pairs:[['曝光口径','露出≥50% 且停留≥1s 才算曝光'],['防抖去重','同设备同内容短时连点只算 1 次'],['基线校准','健康日人均曝光 × 当日设备数']],
+    lock:{ label:'清洗校准后，9-28 的真实 CTR 是？', code:'6.3', unit:'%', hint:'有效点击 8 ÷ 校准曝光 128（16 台 × 人均 8.0）' },
+    dec:{ intro:'补全「有效点击」统计（剔爬虫 + 防抖去重）',
+      skel:`<span class="k">SELECT</span> <span class="f">COUNT</span>(*) <span class="k">AS</span> valid_clicks
+<span class="k">FROM</span> (<span class="k">SELECT</span> 【1】
+  <span class="k">FROM</span> feed_click_log
+  <span class="k">WHERE</span> <span class="f">DATE</span>(click_time) = <span class="s">'2026-09-28'</span>
+    <span class="k">AND</span> device_id 【2】) t;`,
+      toks:['DISTINCT device_id, news_id',"NOT LIKE 'bot%'","LIKE 'bot%'",'device_id, news_id','COUNT(DISTINCT device_id)','SUM(click_time)'],
+      ans:{'1':'DISTINCT device_id, news_id',"2":"NOT LIKE 'bot%'"} },
+    vq:{ q:'18.2% 里，真实的策略收益有多少？',
+      opts:[
+        {t:'全是刷量，没有真实提升',fb:'❌ 剔除污染后仍有 +1.3pp——推荐策略把爆款排到了前位。'},
+        {t:'+1.3 个百分点（6.3% vs 5.0%）',fb:'✅ 其余约 12pp 是爬虫、连点与曝光漏报。转化没涨是正常的。',ok:true},
+        {t:'+13 个百分点',fb:'❌ 那是把污染当收益去庆功。'}
+      ]},
+    verdict:{ sum:'<b>结案：</b>修正 CTR 6.3%（8/128）。爬虫 0 曝光实锤、d02 未防抖、人均曝光 8.0→4.1 漏报一半。投放保住了。',
+      sol:"SELECT ROUND(8/(16*8.0)*100,1); -- 6.3%\n-- 分子：DISTINCT device+news 且非 bot；分母：16台 × 前日人均曝光 8.0" },
+    badge:{ico:'📡',name:'流量测谎仪',desc:'把 18.2% 拆成 6.3% 的真实与污染。'},
+    teaser:'深夜食记的「喜案」：人均停留时长从 8 分钟涨到 23 分钟，庆功宴都订了——可内容明明没变好。' },
+
+  { id:10, name:'停留时长数据造假案', star:4, metric:'人均停留时长', client:'深夜食记 · 内容社区', db:'case10_duration', icon:'⏱️',
+    chips:['均值三道防线','挂起照妖镜=时长×页数','中位数并列'],
+    recap:'时长涨到 23 分钟，庆功宴都订了。但互动率没涨，还有用户吐槽「看菜谱睡着了 App 还开着」。',
+    scan:{ hint:'点击所有「挂起会话」——时长极长但页数极少（真深度用户页数是 40+）',
+      rows:['w01 360秒 4页','w35 4600秒 42页','w37 12600秒 8页(跨天)','w38 9800秒 5页','w39 8600秒 6页(跨天)','w02 480秒 6页','w36 4800秒 45页','w40 360秒 4页'], bad:[2,3,4] },
+    pairs:[['会话均长（截断）','剔跨天 + LEAST(stay,1800) 后的均值'],['中位数','不受极值影响，与均值并列发布'],['人均时长','有效时长 ÷ 去重用户，配活跃天数解读']],
+    lock:{ label:'修正后的人均会话时长是？', code:'8.9', unit:'分钟', hint:'剔跨天 2 条 + 截断 30 分钟：20280s ÷ 38' },
+    dec:{ intro:'补全「修正后人均会话时长」',
+      skel:`<span class="k">SELECT</span>
+  <span class="f">ROUND</span>(<span class="f">AVG</span>(<span class="f">LEAST</span>(stay_seconds, 【1】)) / 【2】, 1) <span class="k">AS</span> avg_minutes
+<span class="k">FROM</span> user_stay_log
+<span class="k">WHERE</span> <span class="f">DATE</span>(leave_time) 【3】 <span class="f">DATE</span>(enter_time);`,
+      toks:['1800','3600','60','100','=','<>','86400'],
+      ans:{'1':'1800','2':'60','3':'='} },
+    vq:{ q:'23 分钟的水分来自哪？',
+      opts:[
+        {t:'内容质量真的提升了',fb:'❌ 修正后 8.9 分钟回到历史水位，互动率也没涨。'},
+        {t:'后台挂起 + 极值未截断',fb:'✅ 3 条挂起会话占全表 56% 的「时长」（每页上千秒），均值被绑架。',ok:true},
+        {t:'用户突然变粘了',fb:'❌ 「时长 3.5 小时只看 8 页」不是粘性，是忘了关 App。'}
+      ]},
+    verdict:{ sum:'<b>结案：</b>修正人均会话时长 8.9 分钟（原始 23.0，虚高 +158%），中位数 7.0 分钟。庆功宴改为数据质量复盘会。',
+      sol:"SELECT ROUND(AVG(LEAST(stay_seconds,1800))/60,1) AS avg_minutes -- 8.9\nFROM user_stay_log WHERE DATE(leave_time)=DATE(enter_time);" },
+    badge:{ico:'⏱️',name:'时长裁判',desc:'取消庆功宴，保住内容组公信力。等级：A 级侦探达成。'},
+    teaser:'咕噜严选的 CTO 亲自到访：「注册表 12 条记录只有 10 个真人；GMV 差 8.8%；还有付费用户查无此人。」——终章，开门。' },
+
+  { id:11, name:'消失的用户数据', star:5, metric:'综合对账', client:'咕噜严选 CTO', db:'case_hidden_audit', hidden:true, icon:'🏅',
+    chips:['对账三层法','窗口函数三板斧','差异定性四分法'],
+    recap:'终章。三张表、三种病：重复注册、孤儿订单、汇总双跑。总量差异是症状，逐期差异是病历。',
+    scan:{ hint:'点击所有「注册表异常行」——重复注册（同用户第二条）与查无注册的孤儿',
+      rows:['u05 注册 9-03（首条）','u05 注册 9-15（第二条）','u09 注册 9-14（首条）','u09 注册 9-22（第二条）','u01 注册 9-01','u10 注册 9-16','u11 有订单但无注册记录','u02 注册 9-02'], bad:[1,3,6] },
+    pairs:[['行数对账','记录数 vs 去重人数，抓重复注册'],['链路对账','下游 LEFT JOIN 上游找孤儿，抓断裂'],['金额对账','两侧同口径逐日 JOIN，抓误计与双跑']],
+    lock:{ label:'GMV 汇总表与明细的总差异是多少？', code:'440', unit:'元', hint:'5440 - 5000：9-18 误计 260 + 9-21 双跑 180' },
+    dec:{ intro:'补全「GMV 逐日对账」（两侧同口径）',
+      skel:`<span class="k">WITH</span> actual <span class="k">AS</span> (
+  <span class="k">SELECT</span> 【1】 <span class="k">AS</span> d, <span class="f">SUM</span>(pay_amount) <span class="k">AS</span> gmv
+  <span class="k">FROM</span> order_info
+  <span class="k">WHERE</span> 【2】 【3】
+  <span class="k">GROUP BY</span> <span class="f">DATE</span>(order_time)
+)
+<span class="k">SELECT</span> m.stat_date,
+  m.gmv - <span class="f">COALESCE</span>(a.gmv, 0) <span class="k">AS</span> diff
+<span class="k">FROM</span> dwd_gmv_daily m <span class="k">LEFT JOIN</span> actual a <span class="k">ON</span> a.d = m.stat_date
+<span class="k">WHERE</span> m.gmv &lt;&gt; <span class="f">COALESCE</span>(a.gmv, 0);`,
+      toks:['DATE(order_time)',"order_status","= 'paid'","IN ('paid','refunded')",'order_time','SUM(order_id)'],
+      ans:{'1':'DATE(order_time)','2':'order_status',"3":"= 'paid'"} },
+    vq:{ q:'440 元差异的构成是？',
+      opts:[
+        {t:'9-18 退款误计 260 + 9-21 任务双跑 180',fb:'✅ 逐日对账把差异落到两个具体日期：数仓 5440 vs 明细 5000，一分不差。',ok:true},
+        {t:'全是任务双跑',fb:'❌ 双跑只贡献 180；另一半是退款单被误计入 GMV。'},
+        {t:'明细漏数了 440',fb:'❌ 那是数仓组的说法——对账证明了相反。'}
+      ]},
+    verdict:{ sum:'<b>结案：</b>新增 10 人（非 12）；孤儿用户补录；GMV 真实 5000 元。CTO 签字，三方停战。12 枚徽章集齐。',
+      sol:"WITH actual AS (SELECT DATE(order_time) AS d, SUM(pay_amount) AS gmv\nFROM order_info WHERE order_status='paid' GROUP BY DATE(order_time))\nSELECT m.stat_date, m.gmv-COALESCE(a.gmv,0) AS diff\nFROM dwd_gmv_daily m LEFT JOIN actual a ON a.d=m.stat_date\nWHERE m.gmv<>COALESCE(a.gmv,0); -- 9-18:+260  9-21:+180" },
+    badge:{ico:'🏅',name:'首席侦探勋章',desc:'三张表、三种病、一分不差。12 枚徽章集齐，晋升 S 级首席侦探。', final:true },
+    teaser:'' }
+  ];
+
+  /* ================= 存档 ================= */
+  var SAVE_KEY = 'detective_agency_v2';
+  var save = { done:{}, badges:{}, ratings:{}, demoUnlock:false };
+  try { var raw = localStorage.getItem(SAVE_KEY); if (raw) { var p = JSON.parse(raw); for (var k in save) if (p[k] !== undefined) save[k] = p[k]; } } catch (e) {}
+  function persist() { try { localStorage.setItem(SAVE_KEY, JSON.stringify(save)); } catch (e) {} }
+  function badgeCount() { return Object.keys(save.badges).length; }
+  function levelOf(n) { return n >= 11 ? 'S级 首席侦探' : n >= 8 ? 'A级侦探' : n >= 5 ? 'B级侦探' : n >= 2 ? 'C级侦探' : '见习侦探'; }
+  function xpOf(n) { return Math.min(100, 10 + n * 15); }
+  function isDone(id) { return !!save.done[id]; }
+  function isUnlocked(c) {
+    if (save.demoUnlock) return true;
+    if (c.hidden) return badgeCount() >= 10 || !!save.badges[c.id];
+    if (c.id === 0) return true;
+    return isDone(c.id - 1);
+  }
+
+  /* ================= 视图 ================= */
+  var scrHome = $('scr-home'), scrScene = $('scr-scene');
+  function show(s) { scrHome.hidden = s !== 'home'; scrScene.hidden = s !== 'scene'; }
+
+  function renderHome() {
+    var n = badgeCount();
+    $('home-badges').textContent = n;
+    $('home-rank').textContent = '🕵️ ' + levelOf(n);
+    $('home-xp').style.width = xpOf(n) + '%';
+  }
+  $('btn-start').addEventListener('click', function () { enterHub(); });
+  $('btn-reset').addEventListener('click', function () {
+    if (confirm('确定清空全部进度与徽章？')) { save = { done:{}, badges:{}, ratings:{}, demoUnlock:false }; persist(); renderHome(); }
+  });
+  $('btn-home').addEventListener('click', function () { stopTimer(); renderHome(); show('home'); });
+
+  /* ================= toast ================= */
+  var toastTimer = null;
+  function toast(msg, ms) {
+    var t = $('toast'); t.textContent = msg; t.classList.add('show');
+    clearTimeout(toastTimer); toastTimer = setTimeout(function () { t.classList.remove('show'); }, ms || 2200);
+  }
+
+  /* ================= 场景渲染（增量更新，杜绝整格重建卡顿） ================= */
+  /* scene = {grid, player, meta}  cell: 'W'墙 'F'地 'D'门 'S'+type 站点 'H'+n hub门 'X'+装饰 */
+  var scene = null, pathWalk = null, lastTileKey = '', tileEls = [];
+
+  function buildScene() {
+    var g = $('grid'); g.innerHTML = '';
+    tileEls = [];
+    var size = tilePx(scene.cols);
+    g.style.gridTemplateColumns = 'repeat(' + scene.cols + ', ' + size + 'px)';
+    g.style.gridAutoRows = size + 'px';
+    scene.grid.forEach(function (row, y) {
+      var line = [];
+      row.forEach(function (cell, x) {
+        var el = document.createElement('div');
+        el.addEventListener('click', function () { onTileClick(x, y); });
+        line.push(el); g.appendChild(el);
+      });
+      tileEls.push(line);
+    });
+    refreshAll();
+  }
+  function refreshAll() {
+    for (var y = 0; y < scene.grid.length; y++)
+      for (var x = 0; x < scene.grid[y].length; x++) updateTile(x, y);
+  }
+  function updateTile(x, y) {
+    var el = tileEls[y] && tileEls[y][x];
+    if (!el) return;
+    var cell = scene.grid[y][x];
+    el.className = 'tile' + ((x + y) % 2 === 0 ? ' alt' : '');
+    el.textContent = '';
+    el.removeAttribute('data-label');
+    el.removeAttribute('title');
+    if (cell === 'W') { el.classList.add('wall'); }
+    else if (cell[0] === 'X') { el.classList.add('wall'); el.textContent = cell.slice(1); }
+    else if (cell === 'D') {
+      el.classList.add('door');
+      el.textContent = scene.doorOpen ? '🚪' : '🔒';
+      if (scene.doorOpen) el.classList.add('open');
+    } else if (cell[0] === 'H') {
+      el.classList.add('door', 'hubdoor');
+      var hc = cell.slice(1);
+      if (hc === 'G') { el.textContent = '📚'; el.title = '档案室 · 口径图鉴与徽章墙'; }
+      else {
+        var c = CASES[+hc];
+        var done = isDone(hc), unlocked = isUnlocked(c);
+        el.textContent = done ? c.icon : (c.hidden ? '终' : String(c.id));
+        if (!unlocked) el.classList.add('locked');
+        if (done) el.classList.add('donedoor');
+        el.title = (c.hidden ? '终章' : '第' + c.id + '关') + ' · ' + c.name + (done ? '（已结案）' : unlocked ? '（可进入）' : '（未解锁）');
+      }
+      if (cell === 'H11') el.classList.add('hidden-door');
+    } else if (cell[0] === 'S') {
+      el.classList.add('station');
+      var st = STATIONS[cell.slice(1)];
+      el.textContent = st.icon;
+      el.dataset.label = st.label;
+      if (scene.evidence[cell.slice(1)]) el.classList.add('done');
+    } else {
+      el.classList.add('floor');
+    }
+    if (scene.player.x === x && scene.player.y === y) {
+      el.classList.add('player'); el.textContent = '🕵️';
+      el.removeAttribute('data-label');
+    }
+  }
+  function tilePx(cols) {
+    var avail = Math.min(window.innerWidth - 40, 820);
+    var s = Math.floor((avail - cols * 3 - 22) / cols);
+    return Math.max(24, Math.min(48, s));
+  }
+  window.addEventListener('resize', function () { if (scene) buildScene(); });
+
+  function cellAt(x, y) { return scene.grid[y] && scene.grid[y][x]; }
+  function walkable(x, y) { var c = cellAt(x, y); return c && c !== 'W' && c[0] !== 'X'; }
+
+  /* ---- 移动 ---- */
+  function move(dx, dy) {
+    if (pathWalk) pathWalk = null;   // 键盘随时打断自动寻路，绝不卡住
+    var nx = scene.player.x + dx, ny = scene.player.y + dy;
+    if (!walkable(nx, ny)) { return; }
+    setPlayer(nx, ny);
+  }
+  function setPlayer(x, y) {
+    var ox = scene.player.x, oy = scene.player.y;
+    scene.player.x = x; scene.player.y = y;
+    updateTile(ox, oy);
+    updateTile(x, y);
+    var el = tileEls[y][x];
+    el.classList.add('pulse');
+    setTimeout(function () { el.classList.remove('pulse'); }, 150);
+    var key = x + ',' + y;
+    if (key !== lastTileKey) { lastTileKey = key; onStep(x, y); }
+  }
+  function onStep(x, y) {
+    var c = cellAt(x, y);
+    if (c === 'D') { onDoor(); return; }
+    if (c && c[0] === 'H') { onHubDoor(c.slice(1)); return; }
+    if (c && c[0] === 'S') {
+      var t = c.slice(1);
+      if (scene.evidence[t]) { toast('这个点已经取证完毕 ✓'); return; }
+      openStation(t);
+    }
+  }
+  function onTileClick(x, y) {
+    if (pathWalk) return;
+    if (!walkable(x, y)) { // 点门也触发
+      var c = cellAt(x, y);
+      if (c === 'D') onDoor();
+      else if (c && c[0] === 'H') onHubDoor(c.slice(1));
+      return;
+    }
+    var p = bfs(scene.player, { x: x, y: y });
+    if (!p || p.length === 0) return;
+    pathWalk = p;
+    (function step() {
+      if (!pathWalk || !pathWalk.length) { pathWalk = null; return; }
+      var n = pathWalk.shift();
+      setPlayer(n.x, n.y);
+      if (pathWalk.length && !modalOpen()) setTimeout(step, 105);
+      else pathWalk = null;
+    })();
+  }
+  function bfs(from, to) {
+    var key = function (p) { return p.x + ',' + p.y; };
+    var prev = {}, q = [from], seen = {}; seen[key(from)] = true;
+    while (q.length) {
+      var cur = q.shift();
+      if (cur.x === to.x && cur.y === to.y) {
+        var path = [], c = cur;
+        while (!(c.x === from.x && c.y === from.y)) { path.unshift(c); c = prev[key(c)]; }
+        return path;
+      }
+      [[1,0],[-1,0],[0,1],[0,-1]].forEach(function (d) {
+        var n = { x: cur.x + d[0], y: cur.y + d[1] };
+        if (walkable(n.x, n.y) && !seen[key(n)]) { seen[key(n)] = true; prev[key(n)] = cur; q.push(n); }
+      });
+    }
+    return null;
+  }
+
+  /* 键盘（弹窗打开时完全屏蔽，避免背后移动角色） */
+  document.addEventListener('keydown', function (e) {
+    if (scrScene.hidden || modalOpen()) return;
+    var map = { ArrowUp:[0,-1], ArrowDown:[0,1], ArrowLeft:[-1,0], ArrowRight:[1,0],
+      w:[0,-1], s:[0,1], a:[-1,0], d:[1,0], W:[0,-1], S:[0,1], A:[-1,0], D:[1,0] };
+    if (map[e.key]) { e.preventDefault(); move(map[e.key][0], map[e.key][1]); }
+  });
+  $('dpad').querySelectorAll('button').forEach(function (b) {
+    b.addEventListener('click', function () {
+      var m = { up:[0,-1], down:[0,1], left:[-1,0], right:[1,0] }[b.dataset.d];
+      move(m[0], m[1]);
+    });
+  });
+
+  /* ================= 大厅 ================= */
+  function enterHub() {
+    stopTimer();
+    // 8×5：上墙门(案件0-4 + 档案)，下墙门(案件5-9 + 终章 + 装饰)
+    var topDoors = ['H0','H1','H2','H3','H4','HG','X🪴','X☕'];
+    var botDoors = ['H5','H6','H7','H8','H9','H10','H11','X📦'];
+    var g = [];
+    g.push(topDoors.slice());
+    for (var r = 1; r <= 3; r++) { g.push(['F','F','F','F','F','F','F','F']); }
+    g.push(botDoors.slice());
+    scene = { cols: 8, rows: 5, grid: g, player: { x: 3, y: 2 }, hub: true };
+    lastTileKey = '';
+    $('hud-title').textContent = '🗺️ 侦探局大厅';
+    $('hud-evi').hidden = true; $('hud-clock').hidden = true;
+    $('hud-badges').textContent = badgeCount();
+    $('hud-level').textContent = '🎖️ ' + levelOf(badgeCount());
+    $('scene-hint').textContent = '走上门口进入案件 · 📚 档案室可查口径图鉴与徽章 · 紫门是终章';
+    buildScene(); show('scene');
+    if (badgeCount() === 0 && !save.hubToastShown) { toast('欢迎入职！走上任意未上锁的门开始第一案 🔔', 3200); save.hubToastShown = true; persist(); }
+  }
+
+  function onHubDoor(code) {
+    if (code === 'G') { openGallery(); return; }
+    var c = CASES[+code];
+    if (!c) return;
+    if (!isUnlocked(c)) { toast(code === '11' ? '🔒 终章需集齐前 10 案徽章' : '🔒 先破上一案才能进这扇门'); return; }
+    enterRoom(c);
+  }
+
+  /* ================= 案件房间 ================= */
+  var STATIONS = {
+    scan:  { icon:'🧾', label:'扫描', title:'🧾 异常扫描 · 找出问题数据行' },
+    pairs: { icon:'🗂️', label:'配对', title:'🗂️ 口径配对 · 连连看' },
+    puzzle:{ icon:'🖥️', label:'终端', title:'🖥️ 数据终端 · SQL 拼图' },
+    lock:  { icon:'🔐', label:'保险柜', title:'🔐 数字保险柜 · 输入口径答案' }
+  };
+  var timerId = null, LEFT = 300;
+
+  function enterRoom(c) {
+    var g = [];
+    g.push(['W','W','W','W','W','W','W','W']);
+    g.push(['F','Spairs','F','F','F','F','Spuzzle','F']);
+    g.push(['F','F','F','F','F','F','F','F']);
+    g.push(['F','Sscan','F','X🕰️','F','F','Slock','F']);
+    g.push(['F','F','F','F','F','F','F','F']);
+    g.push(['W','W','W','D','W','W','W','W']);
+    scene = { cols: 8, rows: 6, grid: g, player: { x: 3, y: 4 }, case: c,
+      evidence: { scan:false, pairs:false, puzzle:false, lock:false }, doorOpen: false };
+    lastTileKey = '';
+    $('hud-title').textContent = 'CASE ' + String(c.id).padStart(2, '0') + ' · ' + c.name;
+    $('hud-evi').hidden = false; updateEviHud();
+    $('hud-clock').hidden = false;
+    $('hud-badges').textContent = badgeCount();
+    $('hud-level').textContent = '🎖️ ' + levelOf(badgeCount());
+    LEFT = 300; paintClock(); startTimer();
+    $('scene-hint').textContent = '踩上 4 个取证点各完成一个小解谜 · 集齐 4 条证据后走 🔒 门结案';
+    buildScene(); show('scene');
+    toast('🚨 ' + (c.hidden ? '终章' : 'CASE ' + c.id) + ' · ' + c.name + ' —— ' + c.client, 2600);
+  }
+  function updateEviHud() {
+    var i = 0;
+    $('hud-evi').querySelectorAll('i').forEach(function (el) {
+      var keys = ['scan','pairs','puzzle','lock'];
+      el.classList.toggle('got', !!scene.evidence[keys[i]]);
+      el.textContent = scene.evidence[keys[i]] ? '✓' : ['🧾','🗂️','🖥️','🔐'][i];
+      i++;
+    });
+  }
+  function startTimer() { stopTimer(); paintClock(); timerId = setInterval(function () { LEFT--; paintClock(); if (LEFT <= 0) { stopTimer(); toast('⏰ 时间到！仍可继续取证结案（银牌）', 2800); } }, 1000); }
+  function stopTimer() { if (timerId) { clearInterval(timerId); timerId = null; } }
+  function paintClock() {
+    var m = Math.floor(Math.max(0, LEFT) / 60), r = Math.max(0, LEFT) % 60;
+    $('hud-clock').textContent = (m < 10 ? '0' + m : m) + ':' + (r < 10 ? '0' + r : r);
+    $('hud-clock').classList.toggle('low', LEFT <= 60);
+  }
+  function penalty(n) { if (scene && scene.case && LEFT > 0) { LEFT = Math.max(0, LEFT - n); paintClock(); } }
+
+  function onDoor() {
+    if (scene.hub) return;
+    var got = Object.keys(scene.evidence).filter(function (k) { return scene.evidence[k]; }).length;
+    if (!scene.doorOpen) {
+      if (got >= 4) { scene.doorOpen = true; refreshAll(); toast('🔓 证据齐全，门开了——走出去结案！'); }
+      else { toast('🔒 还差 ' + (4 - got) + ' 条证据（缺：' + missingStations() + '）'); }
+      return;
+    }
+    openVerdict();
+  }
+  function missingStations() {
+    var names = { scan:'异常扫描', pairs:'口径配对', puzzle:'终端拼图', lock:'保险柜' };
+    return Object.keys(scene.evidence).filter(function (k) { return !scene.evidence[k]; }).map(function (k) { return names[k]; }).join('、');
+  }
+
+  /* ================= 弹层与解谜 ================= */
+  var modalOpen = function () { return !!document.querySelector('.overlay.show'); };
+  function openModal(title) {
+    $('m-title').textContent = title;
+    $('m-body').innerHTML = '';
+    $('m-fb').className = 'm-fb';
+    $('modal').classList.add('show');
+  }
+  $('m-close').addEventListener('click', function () { $('modal').classList.remove('show'); });
+  function fb(ok, msg) { var f = $('m-fb'); f.className = 'm-fb show ' + (ok ? 'ok' : 'no'); f.innerHTML = msg; }
+
+  function openStation(t) {
+    if (t === 'scan') openScan();
+    else if (t === 'pairs') openPairs();
+    else if (t === 'puzzle') openPuzzle();
+    else if (t === 'lock') openLock();
+  }
+  function completeStation(t, msg) {
+    scene.evidence[t] = true;
+    updateEviHud(); refreshAll();
+    fb(true, msg + '<br>✅ 证据 +1 —— ' + (Object.keys(scene.evidence).filter(function (k) { return scene.evidence[k]; }).length >= 4 ? '四条证据集齐，去 🔒 门结案！' : '继续踩下一个取证点。'));
+    var got = Object.keys(scene.evidence).filter(function (k) { return scene.evidence[k]; }).length;
+    if (got >= 4) { scene.doorOpen = true; refreshAll(); }
+  }
+
+  /* ---- 异常扫描 ---- */
+  var scanSel = {};
+  function openScan() {
+    var s = scene.case.scan;
+    openModal(STATIONS.scan.title);
+    var sub = document.createElement('div'); sub.className = 'm-sub';
+    sub.innerHTML = '<b>任务：</b>' + s.hint + '。<br>点选数据行 → 点「提交扫描报告」。选错一条 <b>−10s</b>。';
+    $('m-body').appendChild(sub);
+    var box = document.createElement('div'); box.className = 'scan-rows';
+    scanSel = {};
+    s.rows.forEach(function (r, i) {
+      var b = document.createElement('button'); b.className = 'scan-row'; b.type = 'button';
+      b.innerHTML = '<span class="idx">' + String(i + 1).padStart(2, '0') + '</span><span>' + r + '</span>';
+      b.addEventListener('click', function () {
+        scanSel[i] = !scanSel[i];
+        this.classList.toggle('sel', !!scanSel[i]);
+      });
+      box.appendChild(b);
+    });
+    $('m-body').appendChild(box);
+    var btn = document.createElement('button'); btn.className = 'btn-main'; btn.style.marginTop = '12px'; btn.style.letterSpacing = '2px';
+    btn.textContent = '提交扫描报告';
+    btn.addEventListener('click', function () {
+      var picked = Object.keys(scanSel).filter(function (k) { return scanSel[k]; }).map(Number);
+      var okPick = picked.every(function (i) { return s.bad.indexOf(i) >= 0; });
+      var allFound = s.bad.every(function (i) { return picked.indexOf(i) >= 0; });
+      if (okPick && allFound && picked.length === s.bad.length) {
+        box.querySelectorAll('.scan-row').forEach(function (el, i) { if (s.bad.indexOf(i) >= 0) el.classList.add('right'); });
+        box.querySelectorAll('.scan-row').forEach(function (el) { el.style.pointerEvents = 'none'; });
+        completeStation('scan', '扫描报告无误：' + s.bad.length + ' 条问题数据全部揪出。');
+      } else {
+        penalty(10);
+        box.querySelectorAll('.scan-row').forEach(function (el, i) {
+          if (scanSel[i] && s.bad.indexOf(i) < 0) { el.classList.add('wrongpick'); var w = el; setTimeout(function () { w.classList.remove('wrongpick'); }, 500); }
+        });
+        fb(false, '❌ 扫描有误（−10s）。提示：' + s.hint + '——共 ' + s.bad.length + ' 条。');
+      }
+    });
+    $('m-body').appendChild(btn);
+  }
+
+  /* ---- 口径配对 ---- */
+  var pairState = null;
+  function openPairs() {
+    var ps = scene.case.pairs;
+    openModal(STATIONS.pairs.title);
+    var sub = document.createElement('div'); sub.className = 'm-sub';
+    sub.innerHTML = '<b>任务：</b>左列选口径、右列选释义，两两配对。配错一次 <b>−10s</b>。';
+    $('m-body').appendChild(sub);
+    pairState = { selL: -1, selR: -1, matched: 0 };
+    var leftBtns = [], rightBtns = [];
+    ps.forEach(function (p, i) {
+      var l = document.createElement('button'); l.className = 'pair-card'; l.type = 'button';
+      l.innerHTML = '<b>' + p[0] + '</b>';
+      l.addEventListener('click', function () { pickPair('L', i); });
+      var r = document.createElement('button'); r.className = 'pair-card'; r.type = 'button';
+      r.innerHTML = p[1];
+      r.addEventListener('click', function () { pickPair('R', i); });
+      leftBtns.push(l); rightBtns.push(r);
+    });
+    // 左列固定顺序，右列乱序；两列并排
+    var order = [0, 1, 2].sort(function () { return Math.random() - 0.5; });
+    var wrap = document.createElement('div'); wrap.style.display = 'flex'; wrap.style.gap = '8px';
+    var colL = document.createElement('div'); colL.style.flex = '1'; colL.style.display = 'flex'; colL.style.flexDirection = 'column'; colL.style.gap = '8px';
+    var colR = document.createElement('div'); colR.style.flex = '1'; colR.style.display = 'flex'; colR.style.flexDirection = 'column'; colR.style.gap = '8px';
+    ps.forEach(function (p, i) { colL.appendChild(leftBtns[i]); });
+    order.forEach(function (i) { colR.appendChild(rightBtns[i]); });
+    wrap.appendChild(colL); wrap.appendChild(colR);
+    $('m-body').appendChild(wrap);
+    pairState.leftBtns = leftBtns; pairState.rightBtns = rightBtns; pairState.order = order;
+    pairState.pickL = null; pairState.pickR = null;
+  }
+  function pickPair(side, i) {
+    if (side === 'L') { pairState.pickL = i; pairState.leftBtns.forEach(function (b, j) { b.classList.toggle('sel', j === i); }); }
+    else { pairState.pickR = i; pairState.rightBtns.forEach(function (b, j) { b.classList.toggle('sel', j === i); }); }
+    if (pairState.pickL !== null && pairState.pickR !== null) {
+      if (pairState.pickL === pairState.pickR) {
+        pairState.leftBtns[pairState.pickL].classList.add('matched'); pairState.leftBtns[pairState.pickL].classList.remove('sel');
+        pairState.rightBtns[pairState.pickR].classList.add('matched'); pairState.rightBtns[pairState.pickR].classList.remove('sel');
+        pairState.matched++;
+        pairState.pickL = null; pairState.pickR = null;
+        if (pairState.matched >= scene.case.pairs.length) {
+          completeStation('pairs', '三组口径全部配对成功。');
+        } else { fb(true, '✅ 配对成功 ' + pairState.matched + '/' + scene.case.pairs.length); }
+      } else {
+        penalty(10);
+        fb(false, '❌ 配对失败（−10s）——再看一眼口径卷宗的定义。');
+        var L = pairState.pickL, R = pairState.pickR;
+        pairState.leftBtns[L].classList.remove('sel'); pairState.rightBtns[R].classList.remove('sel');
+        pairState.pickL = null; pairState.pickR = null;
+      }
+    }
+  }
+
+  /* ---- SQL 拼图终端 ---- */
+  var ANSWER = {}, FILLED = {};
+  function openPuzzle() {
+    var d = scene.case.dec;
+    openModal(STATIONS.puzzle.title);
+    var sub = document.createElement('div'); sub.className = 'm-sub';
+    sub.innerHTML = '<b>' + d.intro + '</b>。把碎片点入 ①②③ 空，拼错一次 <b>−30s</b>。';
+    $('m-body').appendChild(sub);
+    var sk = document.createElement('div'); sk.className = 'skel';
+    sk.innerHTML = d.skel.replace(/【(\d)】/g, function (_, n) {
+      return '<button class="blank" type="button" data-b="' + n + '">？' + ['①','②','③'][n-1] + '</button>';
+    });
+    $('m-body').appendChild(sk);
+    ANSWER = d.ans; FILLED = {};
+    Object.keys(ANSWER).forEach(function (k) { FILLED[k] = null; });
+    var tk = document.createElement('div'); tk.className = 'toks';
+    d.toks.forEach(function (t) {
+      var b = document.createElement('button'); b.type = 'button'; b.className = 'tok';
+      b.textContent = t.replace(/&lt;/g, '<'); b.setAttribute('data-tok', t);
+      b.addEventListener('click', function () {
+        for (var k in FILLED) { if (FILLED[k] === null) { FILLED[k] = t; b.classList.add('used'); rb(k); return; } }
+      });
+      tk.appendChild(b);
+    });
+    $('m-body').appendChild(tk);
+    sk.querySelectorAll('.blank').forEach(function (el) {
+      el.addEventListener('click', function () {
+        var k = el.getAttribute('data-b');
+        if (FILLED[k] !== null) { var b = tokBtn(FILLED[k]); if (b) b.classList.remove('used'); FILLED[k] = null; rb(k); }
+      });
+    });
+    var btn = document.createElement('button'); btn.className = 'btn-main'; btn.style.marginTop = '12px'; btn.style.letterSpacing = '2px';
+    btn.textContent = '⚡ 执行查询';
+    btn.addEventListener('click', function () {
+      var ok = Object.keys(ANSWER).every(function (k) { return FILLED[k] === ANSWER[k]; });
+      if (ok) {
+        completeStation('puzzle', '查询执行成功，结果已存档。完整逐行注释版见对应卷宗。');
+      } else {
+        penalty(30);
+        Object.keys(ANSWER).forEach(function (k) {
+          if (FILLED[k] !== ANSWER[k] && FILLED[k] !== null) {
+            var el = sk.querySelector('.blank[data-b="' + k + '"]');
+            el.classList.remove('err'); void el.offsetWidth; el.classList.add('err');
+          }
+        });
+        fb(false, '❌ 查询报错（−30s）——检查碎片与空位是否对得上。');
+      }
+    });
+    $('m-body').appendChild(btn);
+    $('m-fb').className = 'm-fb';
+  }
+  function tokBtn(t) {
+    var list = $('m-body').querySelectorAll('.tok');
+    for (var i = 0; i < list.length; i++) {
+      if (list[i].getAttribute('data-tok') === t) return list[i];
+    }
+    return null;
+  }
+  function rb(k) {
+    var el = $('m-body').querySelector('.blank[data-b="' + k + '"]');
+    el.classList.remove('err');
+    if (FILLED[k] === null) { el.classList.remove('filled'); el.textContent = '？' + ['①','②','③'][k-1]; }
+    else { el.classList.add('filled'); el.textContent = FILLED[k].replace(/&lt;/g, '<'); }
+  }
+
+  /* ---- 数字保险柜 ---- */
+  function openLock() {
+    var L = scene.case.lock;
+    openModal(STATIONS.lock.title);
+    var sub = document.createElement('div'); sub.className = 'm-sub';
+    sub.innerHTML = '<b>' + L.label + '</b><br>提示：' + L.hint + '。输错一次 <b>−20s</b>。';
+    $('m-body').appendChild(sub);
+    var box = document.createElement('div'); box.className = 'lock-box';
+    var disp = document.createElement('div'); disp.className = 'lock-display'; disp.textContent = '_';
+    box.appendChild(disp);
+    var pad = document.createElement('div'); pad.className = 'lock-pad';
+    var cur = '';
+    function paint() { disp.textContent = cur === '' ? '_' : cur; }
+    ['1','2','3','4','5','6','7','8','9','.','0','⌫'].forEach(function (ch) {
+      var b = document.createElement('button'); b.type = 'button'; b.textContent = ch;
+      b.addEventListener('click', function () {
+        if (ch === '⌫') { cur = cur.slice(0, -1); paint(); return; }
+        if (cur.replace('.', '').length >= 4) return;
+        cur += ch; paint();
+      });
+      pad.appendChild(b);
+    });
+    box.appendChild(pad);
+    var unit = document.createElement('div'); unit.className = 'lock-unit'; unit.textContent = '单位：' + L.unit + ' ｜ 输入后按「转动锁芯」';
+    box.appendChild(unit);
+    $('m-body').appendChild(box);
+    var btn = document.createElement('button'); btn.className = 'btn-main'; btn.style.marginTop = '12px'; btn.style.letterSpacing = '2px';
+    btn.textContent = '🔑 转动锁芯';
+    btn.addEventListener('click', function () {
+      if (parseFloat(cur) === parseFloat(L.code)) {
+        completeStation('lock', '「咔哒」——保险柜开了！正确答案 ' + L.code + ' ' + L.unit + '。');
+      } else {
+        penalty(20);
+        fb(false, '❌ 锁芯弹回（−20s）。再算一遍：' + L.hint);
+      }
+    });
+    $('m-body').appendChild(btn);
+  }
+
+  /* ---- 出门推理与结案 ---- */
+  function openVerdict() {
+    stopTimer();
+    var c = scene.case, vq = c.vq;
+    openModal('🧩 推理板 · 指认根因');
+    var sub = document.createElement('div'); sub.className = 'm-sub';
+    sub.innerHTML = '三条证据已入卷。最后一问：<b>' + vq.q + '</b>';
+    $('m-body').appendChild(sub);
+    vq.opts.forEach(function (o, i) {
+      var b = document.createElement('button'); b.className = 'opt'; b.type = 'button';
+      b.innerHTML = '<span class="key">' + 'ABC'[i] + '</span><span>' + o.t + '</span>';
+      b.addEventListener('click', function () {
+        if (o.ok) {
+          this.classList.add('right');
+          $('m-body').querySelectorAll('.opt').forEach(function (x) { x.disabled = true; });
+          fb(true, o.fb);
+          setTimeout(function () {
+            $('modal').classList.remove('show');
+            showVerdictReport();
+          }, 900);
+        } else {
+          penalty(20);
+          this.classList.add('opt-wrong');
+          fb(false, o.fb);
+          var self = this; setTimeout(function () { self.classList.remove('opt-wrong'); }, 500);
+        }
+      });
+      $('m-body').appendChild(b);
+    });
+  }
+  function showVerdictReport() {
+    var c = scene.case;
+    var rating = LEFT >= 120 ? '⭐⭐⭐ 金牌侦探' : LEFT > 0 ? '⭐⭐ 银牌侦探' : '⭐ 铜牌侦探（超时完成）';
+    save.ratings[c.id] = rating;
+    openModal('✦ 真相大白');
+    var box = $('m-body');
+    var sum = document.createElement('div'); sum.className = 'm-sub'; sum.innerHTML = c.verdict.sum;
+    box.appendChild(sum);
+    var ev = document.createElement('div');
+    ['🧾 异常扫描','🗂️ 口径配对','🖥️ 终端拼图','🔐 数字保险柜'].forEach(function (t) {
+      var d = document.createElement('div'); d.className = 'evi-line';
+      d.innerHTML = '<span class="pin">📌</span><span>' + t + ' —— 已归档</span>';
+      ev.appendChild(d);
+    });
+    box.appendChild(ev);
+    var rate = document.createElement('div'); rate.className = 'm-sub';
+    rate.innerHTML = '办案评级：<b style="color:var(--gold2)">' + rating + '</b> ｜ 剩余时间 ' + Math.floor(LEFT / 60) + ':' + String(LEFT % 60).padStart(2, '0');
+    box.appendChild(rate);
+    var sol = document.createElement('div'); sol.className = 'skel'; sol.innerHTML = c.verdict.sol;
+    box.appendChild(sol);
+    var btn = document.createElement('button'); btn.className = 'btn-main'; btn.style.marginTop = '12px';
+    btn.textContent = '提交结案报告 →';
+    btn.addEventListener('click', function () {
+      $('modal').classList.remove('show');
+      grantBadge(c);
+    });
+    box.appendChild(btn);
+  }
+  function grantBadge(c) {
+    stopTimer();
+    $('md-ico').textContent = c.badge.ico;
+    $('md-name').textContent = c.badge.name;
+    if (!save.badges[c.id]) save.badges[c.id] = true;
+    save.done[c.id] = true; persist();
+    var n = badgeCount();
+    $('md-desc').innerHTML = c.badge.desc + '<br>当前等级：<b>' + levelOf(n) + '</b> · 徽章 <b>' + n + '</b>/12' + (c.teaser ? '<br><br><span class="levelup">🔊 ' + c.teaser + '</span>' : '');
+    $('badge-modal').classList.add('show');
+    $('hud-badges').textContent = n;
+    $('hud-level').textContent = '🎖️ ' + levelOf(n);
+  }
+  $('md-claim').addEventListener('click', function () {
+    $('badge-modal').classList.remove('show');
+    if (scene && scene.case && scene.case.badge.final) { $('final-modal').classList.add('show'); return; }
+    enterHub();
+  });
+  $('final-ok').addEventListener('click', function () { $('final-modal').classList.remove('show'); enterHub(); });
+
+  /* ================= 档案室 ================= */
+  function openGallery() {
+    openModal('📚 档案室 · 口径图鉴与徽章墙');
+    var box = $('m-body');
+    var sub = document.createElement('div'); sub.className = 'm-sub';
+    sub.innerHTML = '破案自动收集口径卡。当前 <b>' + badgeCount() + '</b>/12 枚徽章 · 等级 <b>' + levelOf(badgeCount()) + '</b>';
+    box.appendChild(sub);
+    var g = document.createElement('div'); g.className = 'gallery';
+    CASES.forEach(function (c) {
+      var d = document.createElement('div'); d.className = 'g-card' + (isDone(c.id) ? '' : ' locked');
+      d.innerHTML = '<b>' + c.icon + ' ' + c.badge.name + '</b>' +
+        (isDone(c.id)
+          ? c.chips.join(' · ') + '<br><span style="color:var(--gold2)">' + (save.ratings[c.id] || '⭐⭐ 已结案') + '</span>'
+          : '破获 ' + (c.hidden ? '终章' : '第' + c.id + '关') + '后解锁');
+      g.appendChild(d);
+    });
+    box.appendChild(g);
+  }
+
+  /* ================= 启动 ================= */
+  renderHome();
+})();
+</script>
+</body>
+</html>
