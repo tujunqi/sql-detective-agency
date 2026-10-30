@@ -26,7 +26,7 @@
 
 **方式一：直接玩（30 秒）**
 
-浏览器打开 [play/index.html](play/index.html)（或仓库启用 GitHub Pages 后访问对应地址），点「进入侦探局」。走格子探索大厅，踩进 12 间案件室，每间房完成 4 个取证小解谜（🧾 异常数据扫描 → 🗂️ 口径配对 → 🖥️ SQL 拼图 → 🔐 数字保险柜），集齐证据开锁出门、指认根因、领取徽章。手机可玩（方向键 + 点格子自动寻路），进度保存在本地。玩法机制换皮自多款 GitHub 开源游戏：Vim Adventures 式走格子、OverTheWire 式开锁推进、Flexbox Froggy 式即时反馈解谜、SQL Murder Mystery 式证据结案。
+浏览器打开 [play/index.html](play/index.html)，或直接访问线上版：**https://tujunqi.github.io/sql-detective-agency/play/** ——点「进入侦探局」。走格子探索大厅，踩进 12 间案件室，每间房完成 4 个取证小解谜（🧾 异常数据扫描 → 🗂️ 口径配对 → 🖥️ SQL 拼图 → 🔐 数字保险柜），集齐证据开锁出门、指认根因、领取徽章。手机可玩（方向键 + 点格子自动寻路），进度保存在本地。玩法机制换皮自多款 GitHub 开源游戏：Vim Adventures 式走格子、OverTheWire 式开锁推进、Flexbox Froggy 式即时反馈解谜、SQL Murder Mystery 式证据结案。
 
 **方式二：DataGrip 深度办案（推荐）**
 
